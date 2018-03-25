@@ -1,7 +1,10 @@
-#include <stdint.h>
 #define BUFSIZE 100
 
-enum queue_signal {QUEUE_EMPTY = -2, QUEUE_FULL = -1, SUCCESS};
+enum queue_signal {
+    QUEUE_EMPTY = -2, 
+    QUEUE_FULL = -1, 
+    SUCCESS
+};
 
 typedef struct result_queue_t {
     int32_t back, front, size;
