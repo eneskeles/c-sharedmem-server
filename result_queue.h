@@ -7,8 +7,8 @@ enum queue_signal {
 };
 
 typedef struct result_queue_t {
-    int32_t back, front, size;
-    int32_t arr[BUFSIZE]; 
+    uint32_t back, front, size;
+    uint32_t arr[BUFSIZE]; 
 } result_queue_t; 
 
 void result_queue_init(result_queue_t *result_queue) {
@@ -17,27 +17,26 @@ void result_queue_init(result_queue_t *result_queue) {
     result_queue->size = 0;
 }
 
-int32_t result_queue_push(result_queue_t *result_queue, int32_t item) {
+int32_t result_queue_push(result_queue_t *result_queue, uint32_t item) {
     if (result_queue->size == BUFSIZE) 
-        return (int32_t)QUEUE_FULL;
+        return QUEUE_FULL;
 
     result_queue->arr[result_queue->back] = item; 
     result_queue->back = (result_queue->back + 1) % BUFSIZE; 
     result_queue->size++; 
-    return (int32_t)SUCCESS;
+    return SUCCESS;
 }
 
 int32_t result_queue_pop(result_queue_t *result_queue) {
     if (result_queue->size == 0)
-        return (int32_t)QUEUE_EMPTY;
+        return QUEUE_EMPTY;
     
     int32_t result = result_queue->arr[result_queue->front];
     result_queue->front = (result_queue->front + 1) % BUFSIZE; 
     result_queue->size--; 
-
     return result;
 }
 
-int32_t result_queue_empty(result_queue_t *result_queue) {
+uint32_t result_queue_empty(result_queue_t *result_queue) {
     return result_queue->size == 0;
 }

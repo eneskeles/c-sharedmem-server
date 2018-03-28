@@ -3,7 +3,7 @@
 #include "request.h"
 
 typedef struct request_queue_t {
-    int32_t back, front, size;
+    uint32_t back, front, size;
     request_t arr[N]; 
 } request_queue_t;
 
@@ -15,13 +15,12 @@ void request_queue_init(request_queue_t *request_queue) {
 
 int32_t request_queue_push(request_queue_t *request_queue, request_t request) {
     if (request_queue->size == N)
-        return (int32_t)QUEUE_FULL;
+        return QUEUE_FULL;
     
     set_request(&request_queue->arr[request_queue->back], request.index, request.keyword);
-    
     request_queue->back = (request_queue->back + 1) % N; 
     request_queue->size++; 
-    return (int32_t)SUCCESS;
+    return SUCCESS;
 }
 
 // do not use this method without checking if the queue is empty
@@ -32,6 +31,6 @@ void request_queue_pop(request_queue_t *request_queue, request_t *result) {
     request_queue->size--;
 }
 
-int32_t request_queue_empty(request_queue_t *request_queue) {
+uint32_t request_queue_empty(request_queue_t *request_queue) {
     return request_queue->size == 0;
 }

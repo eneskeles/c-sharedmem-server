@@ -1,3 +1,4 @@
+#include <string.h>
 #define MAX_KEYWORD_LEN 100
 
 typedef struct request_t {
@@ -6,11 +7,6 @@ typedef struct request_t {
 } request_t;
 
 void set_request(request_t *request, uint32_t index, char *keyword) {
-    int i = 0 ;
-    while (i < MAX_KEYWORD_LEN - 1 && keyword[i]) {
-        request->keyword[i] = keyword[i];
-        i++;
-    }
-    request->keyword[i] = '\0';
+    strcpy(request->keyword, keyword);
     request->index = index; 
 }
