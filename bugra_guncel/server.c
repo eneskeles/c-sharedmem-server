@@ -109,9 +109,6 @@ int main(int argc, char **argv) {
 		sems[i] = sem_open(names[i], O_CREAT|O_EXCL, 0666, 1);
 		//sem_unlink(names[i]);
 	}
-
-	printf("%s\n",names[2]);
-	printf("%s\n",names[9]);
 	//
     // get a pointer to shared memory
     shm = init_shm(shm_name);
@@ -120,6 +117,7 @@ int main(int argc, char **argv) {
 		shm->queue_state[i] = UNUSED;
 	
 	sem_init(&shm->index_semaphore,1,1); //INIT INDEX SEMAPHORE
+	sem_init(&shm->request_semaphore,1,1); //INIT REQUEST SEMAPHORE
 	///////////////////////////////////
     // initialize the request queue
     request_queue_t *request_queue = &shm->request_queue;
@@ -130,8 +128,9 @@ int main(int argc, char **argv) {
         if (!request_queue_empty(request_queue)) {
             // get a request that will later be passed to a worker thread 
             request_t request;
-            request_queue_pop(request_queue, &request); 
-
+			sem_wait(&shm->request_semaphore);
+            request_queue_pop(request_queue, &request);
+			sem_post(&shm->request_semaphore);
             // create arguments
             args_t *args = malloc(sizeof(args_t)); 
             strcpy(args->keyword, request.keyword);

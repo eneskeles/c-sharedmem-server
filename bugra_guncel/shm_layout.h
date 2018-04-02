@@ -12,4 +12,5 @@ typedef struct shm_layout_t {
     result_queue_t result_queues[N]; 
     int32_t queue_state[N];
 	sem_t index_semaphore;
+	sem_t request_semaphore;
 } shm_layout_t; 

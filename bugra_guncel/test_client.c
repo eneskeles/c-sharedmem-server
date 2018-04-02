@@ -30,29 +30,35 @@ int main(int argc, char **argv) {
     request_queue_t *request_queue = &shm->request_queue; 
 	//FINDING AVAIBLE SPACE, CRITICAL SECTION
 	int request_index = 0;
+	 //LOCKING INDEX SEMAPHORE
+	sem_wait(&shm->index_semaphore);
 	while(1){
 		if(request_index == N){
-			printf("Too many clients at the moment!\n");
+			printf("too many clients started\n");
+			sem_post(&shm->index_semaphore);
 			return 0;
 		}	
 		if(shm->queue_state[request_index] == UNUSED){
-			sem_wait(&shm->index_semaphore); //LOCKING INDEX SEMAPHORE
 			shm->queue_state[request_index] = USED;
 			break;
 		}
 		else 
 			request_index++;
 	}
-	
+	sem_post(&shm->index_semaphore);
+	// RELEASING INDEX SEMAPHORE	
 	request_t test_request; 
 	set_request(&test_request, request_index, keyword);
+	sem_wait(&shm->request_semaphore);
 	request_queue_push(request_queue, test_request);
-	sem_post(&shm->index_semaphore); // RELEASING INDEX SEMAPHORE
+	sem_post(&shm->request_semaphore);
+
 	//GETTING NAME OF THE NAMED SEMAPHORE
-		sem_t *sem;
-		char name[MAX_SEM_NAME];
-		sprintf(name,"%s%d",sem_name,request_index);
-		sem = sem_open(name,O_RDWR);
+	sem_t *sem;
+	char name[MAX_SEM_NAME];
+	sprintf(name,"%s%d",sem_name,request_index);
+	sem = sem_open(name,O_RDWR);
+	
 	// WILL DO THE READ/PRINT OPERATION HERE
 	while(1){ /// BUFFER SIZE 100, FULL OLDUĞU CASE'İ CHECK ETMİYOR BİR GÖZ AT
 		sem_wait(sem);
@@ -64,8 +70,8 @@ int main(int argc, char **argv) {
 		}
 		printf("%d\n", to_print);
         fflush(stdout);
-		//sem_post(sem);
 	}
+	
 	//RELEASING REQUEST INDEX SAFELY
 	sem_wait(&shm->index_semaphore); //LOCKING INDEX SEMAPHORE
 	shm->queue_state[request_index] = UNUSED;
