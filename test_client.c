@@ -8,10 +8,16 @@
 #include <fcntl.h>
 #include "shm_layout.h"
 
-int main(int argc, char **argv) {
-    char *shm_name = argv[1];
-    int fd = shm_open(shm_name, O_RDWR, 0666);
+#define SENTINEL_VALUE -1
+#define MAX_SEM_NAME 30
 
+int main(int argc, char **argv) {
+    //PARAMETERS///////////
+	char *shm_name = argv[1];
+	char *keyword = argv[2];
+	char *sem_name = argv[3];
+	/////////////////////////
+    int fd = shm_open(shm_name, O_RDWR, 0666);
 
     ftruncate(fd, sizeof(shm_layout_t));
 
@@ -21,10 +27,55 @@ int main(int argc, char **argv) {
     } 
 
     shm_layout_t *shm = (shm_layout_t *) mmap(NULL, sizeof(shm_layout_t), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0); 
-
     request_queue_t *request_queue = &shm->request_queue; 
-    request_t test_request; 
-    set_request(&test_request, 5, "ali");
-    request_queue_push(request_queue, test_request);
+	//FINDING AVAIBLE SPACE, CRITICAL SECTION
+	int request_index = 0;
+	 //LOCKING INDEX SEMAPHORE
+	sem_wait(&shm->index_semaphore);
+	while(1){
+		if(request_index == N){
+			printf("too many clients started\n");
+			sem_post(&shm->index_semaphore);
+			return 0;
+		}	
+		if(shm->queue_state[request_index] == UNUSED){
+			shm->queue_state[request_index] = USED;
+			break;
+		}
+		else 
+			request_index++;
+	}
+	sem_post(&shm->index_semaphore);
+	// RELEASING INDEX SEMAPHORE	
+	request_t test_request; 
+	set_request(&test_request, request_index, keyword);
+	sem_wait(&shm->request_semaphore);
+	request_queue_push(request_queue, test_request);
+	sem_post(&shm->request_semaphore);
+
+	//GETTING NAME OF THE NAMED SEMAPHORE
+	sem_t *sem;
+	char name[MAX_SEM_NAME];
+	sprintf(name,"%s%d",sem_name,request_index);
+	sem = sem_open(name,O_RDWR);
+	
+	// WILL DO THE READ/PRINT OPERATION HERE
+	while(1){ /// BUFFER SIZE 100, FULL OLDUĞU CASE'İ CHECK ETMİYOR BİR GÖZ AT
+		sem_wait(sem);
+		int to_print = result_queue_pop(&shm->result_queues[request_index]);
+		if(to_print == -1)
+			break;
+		if(to_print == -2){
+			continue;
+		}
+		printf("%d\n", to_print);
+        fflush(stdout);
+	}
+	
+	//RELEASING REQUEST INDEX SAFELY
+	sem_wait(&shm->index_semaphore); //LOCKING INDEX SEMAPHORE
+	shm->queue_state[request_index] = UNUSED;
+	sem_post(&shm->index_semaphore); // RELEASING INDEX SEMAPHORE
+	////
     return 0; 
 } 
